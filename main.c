@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     struct {
         struct nlmsghdr n;
         struct ndmsg ndm;
-        char buf[1024];
+        char buf[0];
     } req = {
             .n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg)),
             .n.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT, /* to get all table instead of a single entry */
@@ -70,14 +70,14 @@ int main(int argc, char **argv) {
         if (tb[NDA_DST]) { /* this is destination address */
             char ip[INET6_ADDRSTRLEN] = {0};
             inet_ntop(msg->ndm_family, RTA_DATA(tb[NDA_DST]), ip, INET6_ADDRSTRLEN);
-            fprintf(stderr, "%s ", ip);
+            fprintf(stdout, "%s ", ip);
         }
         if (tb[NDA_LLADDR]) { /* this is hardware mac address */
             const unsigned char *addr = RTA_DATA(tb[NDA_LLADDR]);
-            fprintf(stderr, "lladdr: %02X:%02X:%02X:%02X:%02X:%02X\n",
+            fprintf(stdout, "lladdr: %02X:%02X:%02X:%02X:%02X:%02X\n",
                     addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
         } else {
-            fprintf(stderr, "lladdr: \n");
+            fprintf(stdout, "lladdr: \n");
         }
 
         p += len;
