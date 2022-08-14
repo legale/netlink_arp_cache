@@ -1,5 +1,5 @@
 #name of output file
-NAME = netlink_arp
+NAME = arp
 
 #Linker flags
 LIBS  =

@@ -1,4 +1,4 @@
-#arp cache getter via netlink kernel socket
+# arp cache getter via netlink kernel socket
 No dependencies program.
 
 ## Howto build
