@@ -1,0 +1,17 @@
+#CMake
+CMakeLists.txt
+/cmake-build-debug
+
+#Eclipse
+/.settings/**
+
+#Jetbrains
+/.idea/**
+
+#vim
+*.swp
+*.swo
+
+#binary
+/build/**
+
