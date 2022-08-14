@@ -9,19 +9,18 @@
 #define ENTRY(x) {x, #x}
 #define STRING_M(x) #x
 
-static int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
+static void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
     /* loop over all rtattributes */
     while (RTA_OK(rta, len) && max--) {
         tb[rta->rta_type] = rta; /* store attribute ptr to the tb array */
         rta = RTA_NEXT(rta, len); /* special rtnetlink.h macro to get next netlink route attribute ptr */
     };
-    return 0;
 }
 
 int main(int argc, char **argv) {
     int status;
     void *p; //just a ptr
-
+    
     /* open socket */
     int sd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 
