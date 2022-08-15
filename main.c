@@ -24,8 +24,7 @@ static void usage(void) {
     exit(-1);
 }
 
-/* Returns true if 'prefix' is a not empty prefix of 'string'.
- */
+/* Returns true if 'prefix' is a not empty prefix of 'string'. */
 static bool matches(const char *prefix, const char *string) {
     if (!*prefix)
         return false;
@@ -74,7 +73,8 @@ int main(int argc, char **argv) {
         } else {
             usage();
         }
-        argc--; argv++;
+        argc--;
+        argv++;
     }
 
     /* main code start */
