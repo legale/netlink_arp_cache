@@ -58,6 +58,12 @@ int main(int argc, char **argv) {
         uint32_t len = answer->nlmsg_len; /* netlink message length including header */
 
         struct ndmsg *msg = NLMSG_DATA(answer); /* macro to get a ptr right after header */
+        /* skip broadcast entries */
+        if(msg->ndm_state & NUD_NOARP){
+            p += len;
+            continue;
+        }
+
         /*
          * Given the payload length, len, this macro returns the aligned
          * length to store in the nlmsg_len field of the nlmsghdr.
@@ -65,12 +71,6 @@ int main(int argc, char **argv) {
         uint32_t msg_len = NLMSG_LENGTH(sizeof(*msg));
         len -= msg_len; /* count message length left */
         p += msg_len; /* move ptr forward */
-
-        /* skip broadcast entries */
-        if(msg->ndm_state & NUD_NOARP){
-            p += len;
-            continue;
-        }
 
         /* this is very first rtnetlink attribute */
         struct rtattr *rta = p;

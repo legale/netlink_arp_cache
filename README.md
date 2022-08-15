@@ -8,3 +8,7 @@ cd <repo_dir>
 make
 ```
 Binary is in the build directory
+
+## Demonstration
+
+![](https://github.com/legale/netlink_arp_cache/demo.gif)
