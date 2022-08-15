@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <arpa/inet.h>
 
@@ -8,6 +10,44 @@
 
 #define ENTRY(x) {x, #x}
 #define STRING_M(x) #x
+
+/* cli arguments parse macro and functions */
+#define NEXT_ARG() do { argv++; if (--argc <= 0) incomplete_command(); } while(0)
+#define NEXT_ARG_OK() (argc - 1 > 0)
+#define PREV_ARG() do { argv--; argc++; } while(0)
+
+static char *argv0; /* ptr to the program name string */
+static void usage(void)
+{
+    fprintf(stdout,
+            "Usage:   %s [mode] [value]         \n"
+            "            mode: ip | mac | help   \n"
+            "\n"
+            "Example: %s ip 192.168.1.1         \n"
+            "         %s mac 00:ff:12:a3:e3     \n"
+            "\n", argv0, argv0, argv0);
+    exit(-1);
+}
+
+/* Returns true if 'prefix' is a not empty prefix of 'string'.
+ */
+static bool matches(const char *prefix, const char *string)
+{
+    if (!*prefix)
+        return false;
+    while (*string && *prefix == *string) {
+        prefix++;
+        string++;
+    }
+
+    return !*prefix;
+}
+
+static void incomplete_command(void)
+{
+    fprintf(stderr, "Command line is not complete. Try option \"help\"\n");
+    exit(-1);
+}
 
 /* rtnetlink route netlink attributes buffer */
 static struct rtattr *tb[NDA_MAX + 1];
@@ -21,6 +61,30 @@ static void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int l
 }
 
 int main(int argc, char **argv) {
+    const char *val_search = NULL;
+    int mode = 0;
+
+    /* cli arguments parse */
+    argv0 = *argv; /* set program name */
+    while (argc > 1) {
+        NEXT_ARG();
+        if (matches(*argv, "ip")){
+            mode = 1;
+            NEXT_ARG();
+            val_search = *argv;
+        } else if (matches(*argv, "mac")){
+            mode = 2;
+            NEXT_ARG();
+            val_search = *argv;
+        } else if (matches(*argv, "help")){
+            usage();
+        } else {
+            usage();
+            exit(1);
+        }
+        argc--; argv++;
+    }
+
     int status;
     void *p, *lp; //just a ptrs
 
@@ -79,19 +143,37 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
         memcpy(tb_, tb, sizeof(tb_)); /* for debug */
 #endif
+        char ip[INET6_ADDRSTRLEN] = {0};
         if (tb[NDA_DST]) { /* this is destination address */
-            const unsigned char *ip_raw = RTA_DATA(tb[NDA_DST]);
-            char ip[INET6_ADDRSTRLEN] = {0};
+            const char *ip_raw = RTA_DATA(tb[NDA_DST]);
             inet_ntop(msg->ndm_family, ip_raw, ip, INET6_ADDRSTRLEN);
-            fprintf(stdout, "%s", ip);
         }
+
+        char addr[18] = {0}; /*low level (hw) address string buffer */
         if (tb[NDA_LLADDR]) { /* this is hardware mac address */
-            const unsigned char *addr = RTA_DATA(tb[NDA_LLADDR]);
-            fprintf(stdout, " lladdr: %02X:%02X:%02X:%02X:%02X:%02X\n",
-                    addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-        } else {
-            fprintf(stdout, " lladdr: \n");
+            const uint8_t *addr_raw = RTA_DATA(tb[NDA_LLADDR]);
+            sprintf(addr, "%02x:%02x:%02x:%02x:%02x:%02x",
+                    addr_raw[0], addr_raw[1], addr_raw[2], addr_raw[3], addr_raw[4], addr_raw[5]);
         }
+
+        switch(mode) {
+            case 1:
+                if (strcmp(val_search, ip) == 0) {
+                    fprintf(stdout, "%s laddr %s\n", ip, addr);
+                    return 0;
+                }
+                break;
+            case 2:
+                if (strcmp(val_search, addr) == 0) {
+                    fprintf(stdout, "%s lladdr %s\n", ip, addr);
+                    return 0;
+                }
+                break;
+            default:
+                fprintf(stdout, "%s lladdr %s\n", ip, addr);
+                break;
+        }
+
 
         p += len; /* move ptr to the next netlink message */
     }
