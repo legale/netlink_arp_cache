@@ -77,8 +77,9 @@ int main(int argc, char **argv) {
         argc--; argv++;
     }
 
-    int64_t status;
-    void *p, *lp; //just a ptrs
+    /* main code start */
+    int64_t status; /* to store send() recv() return value  */
+    void *p, *lp; /* just a ptrs to work with netlink answer data */
 
     /* open socket */
     int sd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
