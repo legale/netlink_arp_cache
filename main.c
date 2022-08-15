@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
             usage();
         } else {
             usage();
-            exit(1);
         }
         argc--; argv++;
     }
