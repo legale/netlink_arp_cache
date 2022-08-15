@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
     int buf_size = status; /* recv will return answer size */
     p = buf; /* set p to start of an answer */
     lp = buf + buf_size; /* answer last byte ptr */
-
+#ifdef DEBUG
     struct rtattr *tb_[NDA_MAX + 1]; /* for debug */
-
+#endif
     while (p < lp) { /* loop till the end */
         struct nlmsghdr *answer = p; /* netlink header structure */
         uint32_t len = answer->nlmsg_len; /* netlink message length including header */
@@ -76,7 +76,9 @@ int main(int argc, char **argv) {
         struct rtattr *rta = p;
         memset(tb, 0, sizeof(tb)); /* clear attribute buffer */
         parse_rtattr(tb, NDA_MAX, rta, len); /* fill tb attribute buffer */
+#ifdef DEBUG
         memcpy(tb_, tb, sizeof(tb_)); /* for debug */
+#endif
         if (tb[NDA_DST]) { /* this is destination address */
             const unsigned char *ip_raw = RTA_DATA(tb[NDA_DST]);
             char ip[INET6_ADDRSTRLEN] = {0};
