@@ -20,11 +20,11 @@ static char *argv0; /* ptr to the program name string */
 static void usage(void)
 {
     fprintf(stdout,
-            "Usage:   %s [mode] [value]         \n"
-            "            mode: ip | mac | help   \n"
+            "Usage:   %s [option] [value]         \n"
+            "            option: ip | mac | help  \n"
             "\n"
-            "Example: %s ip 192.168.1.1         \n"
-            "         %s mac 00:ff:12:a3:e3     \n"
+            "Example: %s ip 192.168.1.1           \n"
+            "         %s mac 00:ff:12:a3:e3       \n"
             "\n", argv0, argv0, argv0);
     exit(-1);
 }
