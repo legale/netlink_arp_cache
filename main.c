@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     /* open socket */
     int sd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 
-    /* contruct arp cache request */
+    /* construct arp cache request */
     struct {
         struct nlmsghdr n;
         struct ndmsg ndm;
