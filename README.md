@@ -11,4 +11,4 @@ Binary is in the build directory
 
 ## Demonstration
 
-![](https://github.com/legale/netlink_arp_cache/demo.gif)
+![](https://github.com/legale/netlink_arp_cache/blob/main/demo.gif)
