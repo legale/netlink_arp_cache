@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-#include <arpa/inet.h>
-
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+
+#include "libnlarpcache.h"
+
+/* FILELINE macro */
+#define STR(x) #x
+#define STRINGIFY(x) STR(x)
+#define FILELINE __FILE__ ":" STRINGIFY(__LINE__)
 
 /* cli arguments parse macro and functions */
 #define NEXT_ARG() do { argv++; if (--argc <= 0) incomplete_command(); } while(0)
@@ -15,7 +21,7 @@
 static char *argv0; /* ptr to the program name string */
 static void usage(void) {
     fprintf(stdout,
-            "Usage:   %s [option] [value]   \n"
+            "Usage:   %s [option] [value]  \n"
             "            option: ip | mac | help  \n"
             "\n"
             "Example: %s ip 192.168.1.1           \n"
@@ -32,24 +38,12 @@ static bool matches(const char *prefix, const char *string) {
         prefix++;
         string++;
     }
-
     return !*prefix;
 }
 
 static void incomplete_command(void) {
     fprintf(stderr, "Command line is not complete. Try option \"help\"\n");
     exit(-1);
-}
-
-/* rtnetlink route netlink attributes buffer */
-static struct rtattr *tb[NDA_MAX + 1];
-
-static void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len) {
-    /* loop over all rtattributes */
-    while (RTA_OK(rta, len) && max--) {
-        tb[rta->rta_type] = rta; /* store attribute ptr to the tb array */
-        rta = RTA_NEXT(rta, len); /* special rtnetlink.h macro to get next netlink route attribute ptr */
-    }
 }
 
 int main(int argc, char **argv) {
@@ -76,73 +70,38 @@ int main(int argc, char **argv) {
         argc--;
         argv++;
     }
-
     /* main code start */
-    int64_t status; /* to store send() recv() return value  */
-    void *p, *lp; /* just a ptrs to work with netlink answer data */
+    void **buf; /* ptr to a ptr to a buffer */
+    int64_t status = get_arp_cache(&buf); /* store arp cache data to a buffer */
 
-    /* open socket */
-    int sd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
+    if (status < 0){
+        fprintf(stderr, FILELINE " error: get_arp_cache %ld %d\n", status, errno);
+        return status;
+    }
 
-    /* construct arp cache request */
-    struct {
-        struct nlmsghdr n;
-        struct ndmsg ndm;
-        char buf[0];
-    } req = {
-            .n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg)),
-            .n.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT, /* to get all table instead of a single entry */
-            .n.nlmsg_type = RTM_GETNEIGH, /* to get arp cache */
-            //.ndm.ndm_family = AF_INET, /* IP protocol family. AF_INET/AF_INET6 */
-    };
+    int64_t buf_size = status; /* get_arp_cache will return actual buffer size used */
+    uint32_t expected_entries; /* expected arp entries */
+    expected_entries = buf_size < 50 ? 1 : buf_size / 50; /* 1 message is about 50 bytes */
 
-    /* send request */
-    status = send(sd, &req, req.n.nlmsg_len, 0);
-    if (!status) fprintf(stdout, "error: socket send return %ld\n", status); /* check send status */
+    arp_cache cache[expected_entries]; /* create arp cache entries storage */
 
-    /* this is buffer to store an answer */
-    char buf[8192];
+    status = parse_arp_cache(*buf, buf_size, (arp_cache *)&cache);
+    int64_t cnt = status; /* arp cache entries counter */
 
-    /* get an answer */
-    status = recv(sd, buf, sizeof(buf), 0);
-    if (!status) fprintf(stdout, "error: socket recv return %ld\n", status); /* check recv status */
+    if (status < 0) fprintf(stderr, FILELINE " error: parse_arp_cache %ld %d\n", status, errno);
 
-    int64_t buf_size = status; /* recv will return answer size */
-    p = buf; /* set p to start of an answer */
-    lp = buf + buf_size; /* answer last byte ptr */
-#ifdef DEBUG
-    struct rtattr *tb_[NDA_MAX + 1]; /* for debug */
-#endif
-    while (p < lp) { /* loop till the end */
-        struct nlmsghdr *answer = p; /* netlink header structure */
-        uint32_t len = answer->nlmsg_len; /* netlink message length including header */
-
-        struct ndmsg *msg = NLMSG_DATA(answer); /* macro to get a ptr right after header */
+    while (cnt--) {
+        uint8_t ndm_family = cache[cnt].ndm_family;
+        struct rtattr **tb = cache[cnt].tb;
         /* skip broadcast entries */
-        if (msg->ndm_state & NUD_NOARP) {
-            p += len;
+        if (cache[cnt].ndm_state & NUD_NOARP) {
             continue;
         }
 
-        /*
-         * Given the payload length, len, this macro returns the aligned
-         * length to store in the nlmsg_len field of the nlmsghdr.
-         */
-        uint32_t msg_len = NLMSG_LENGTH(sizeof(*msg));
-        len -= msg_len; /* count message length left */
-        p += msg_len; /* move ptr forward */
-
-        /* this is very first rtnetlink attribute */
-        struct rtattr *rta = p;
-        memset(tb, 0, sizeof(tb)); /* clear attribute buffer */
-        parse_rtattr(tb, NDA_MAX, rta, len); /* fill tb attribute buffer */
-#ifdef DEBUG
-        memcpy(tb_, tb, sizeof(tb_)); /* for debug */
-#endif
         char ip[INET6_ADDRSTRLEN] = {0};
         if (tb[NDA_DST]) { /* this is destination address */
             const char *ip_raw = RTA_DATA(tb[NDA_DST]);
-            inet_ntop(msg->ndm_family, ip_raw, ip, INET6_ADDRSTRLEN);
+            inet_ntop(ndm_family, ip_raw, ip, INET6_ADDRSTRLEN);
         }
 
         char addr[18] = {0}; /*low level (hw) address string buffer */
@@ -153,6 +112,9 @@ int main(int argc, char **argv) {
         }
 
         switch (mode) {
+            case 0:
+                fprintf(stdout, "%s lladdr %s\n", ip, addr);
+                break;
             case 1:
                 if (strcmp(val_search, ip) == 0) {
                     fprintf(stdout, "%s laddr %s\n", ip, addr);
@@ -166,13 +128,11 @@ int main(int argc, char **argv) {
                 }
                 break;
             default:
-                fprintf(stdout, "%s lladdr %s\n", ip, addr);
                 break;
         }
 
-
-        p += len; /* move ptr to the next netlink message */
     }
+    free(*buf);
 
     return 0;
 }

@@ -5,7 +5,7 @@ No dependencies program.
 ```
 git clone <repo_url>
 cd <repo_dir>
-make
+make arp
 ```
 Binary is in the build directory
 
