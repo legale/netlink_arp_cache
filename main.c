@@ -84,7 +84,8 @@ int main(int argc, char **argv) {
     uint32_t expected_entries; /* expected arp entries */
     expected_entries = buf_size < 50 ? 1 : buf_size / 50; /* 1 message is about 50 bytes */
 
-    arp_cache cache[100] = {0}; /* create arp cache entries storage */
+    arp_cache cache[expected_entries]; /* create arp cache entries storage */
+    bzero(&cache, sizeof(cache)); /* clear cache memory */
 
     status = parse_arp_cache(buf, buf_size, (arp_cache *)cache);
     int64_t cnt = status; /* arp cache entries counter */
