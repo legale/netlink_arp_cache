@@ -10,9 +10,7 @@ void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len
 
 /* warning malloc is used! free(recv_buf) REQUIRED!!!
  * return recv data size received */
-ssize_t send_recv(const void *send_buf, size_t send_buf_len, void ***recv_buf){
-    void *buf; /* local ptr to a buffer */
-    *recv_buf = &buf; /* now external buffer ptr points to local buffer */
+ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf){
 
     int64_t status; /* to store send() recv() return value  */
     int sd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE); /* open socket */
@@ -25,20 +23,21 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void ***recv_buf){
     /*first we need to find out buffer size needed */
     ssize_t expected_buf_size = 512; /* initial buffer size */
     ssize_t buf_size = 0; /* real buffer size */
-    buf = malloc( expected_buf_size ); /* alloc memory for a buffer */
+    *buf = malloc( expected_buf_size ); /* alloc memory for a buffer */
+
     /*
      * MSG_TRUNC will return data size even if buffer is smaller than data
      * MSG_PEEK will receive queue without removing that data from the queue.
      * Thus, a subsequent receive call will return the same data.
      */
-    status = recv(sd, buf, expected_buf_size, MSG_TRUNC | MSG_PEEK);
+    status = recv(sd, *buf, expected_buf_size, MSG_TRUNC | MSG_PEEK);
     if (status < 0) fprintf(stderr, FILELINE " error: recv %ld %d\n", status, errno);
 
     if (status > expected_buf_size){
         expected_buf_size = status; /* this is real size */
-        buf = realloc(buf, expected_buf_size); /* increase buffer size */
+        *buf = realloc(*buf, expected_buf_size); /* increase buffer size */
 
-        status = recv(sd, buf, expected_buf_size, 0); /* now we get the full message */
+        status = recv(sd, *buf, expected_buf_size, 0); /* now we get the full message */
         buf_size = status; /* save real buffer bsize */
         if (status < 0) fprintf(stderr, FILELINE " error: recv %ld %d\n", status, errno);
     }
@@ -50,7 +49,7 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void ***recv_buf){
 }
 
 /* malloc is used! don't forget free(buf) */
-ssize_t get_arp_cache(void ***buf_ptr) {
+ssize_t get_arp_cache(void **buf_ptr) {
     /* construct arp cache request */
     struct {
         struct nlmsghdr n;

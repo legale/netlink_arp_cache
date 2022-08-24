@@ -1,9 +1,9 @@
 #CMake
-CMakeLists.txt
 /cmake-build*
 
 #Eclipse
 /.settings/**
+.project
 
 #Jetbrains
 /.idea/**

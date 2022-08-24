@@ -71,7 +71,8 @@ int main(int argc, char **argv) {
         argv++;
     }
     /* main code start */
-    void **buf; /* ptr to a ptr to a buffer */
+    void *buf; /* ptr to a buffer */
+
     int64_t status = get_arp_cache(&buf); /* store arp cache data to a buffer */
 
     if (status < 0){
@@ -83,9 +84,9 @@ int main(int argc, char **argv) {
     uint32_t expected_entries; /* expected arp entries */
     expected_entries = buf_size < 50 ? 1 : buf_size / 50; /* 1 message is about 50 bytes */
 
-    arp_cache cache[expected_entries]; /* create arp cache entries storage */
+    arp_cache cache[100] = {0}; /* create arp cache entries storage */
 
-    status = parse_arp_cache(*buf, buf_size, (arp_cache *)&cache);
+    status = parse_arp_cache(buf, buf_size, (arp_cache *)cache);
     int64_t cnt = status; /* arp cache entries counter */
 
     if (status < 0) fprintf(stderr, FILELINE " error: parse_arp_cache %ld %d\n", status, errno);
@@ -132,7 +133,7 @@ int main(int argc, char **argv) {
         }
 
     }
-    free(*buf);
+    free(buf);
 
     return 0;
 }

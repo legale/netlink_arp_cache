@@ -25,8 +25,8 @@ typedef struct _arp_cache {
 
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len);
-ssize_t send_recv(const void *send_buf, size_t send_buf_len, void ***recv_buf);
-ssize_t get_arp_cache(void ***buf_ptr);
+ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **recv_buf);
+ssize_t get_arp_cache(void **buf_ptr);
 ssize_t parse_arp_cache(void *buf, ssize_t buf_size, arp_cache cache[]);
 
 #endif /* _LIB_NL_ARP_CACHE */
