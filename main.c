@@ -8,10 +8,6 @@
 
 #include "libnlarpcache.h"
 
-/* FILELINE macro */
-#define STR(x) #x
-#define STRINGIFY(x) STR(x)
-#define FILELINE __FILE__ ":" STRINGIFY(__LINE__)
 
 /* cli arguments parse macro and functions */
 #define NEXT_ARG() do { argv++; if (--argc <= 0) incomplete_command(); } while(0)
@@ -76,7 +72,7 @@ int main(int argc, char **argv) {
     int64_t status = get_arp_cache(&buf); /* store arp cache data to a buffer */
 
     if (status < 0){
-        fprintf(stderr, FILELINE " error: get_arp_cache %ld %d\n", status, errno);
+        fprintf(stderr, "error: get_arp_cache %ld %d\n", status, errno);
         return status;
     }
 
@@ -90,7 +86,7 @@ int main(int argc, char **argv) {
     status = parse_arp_cache(buf, buf_size, (arp_cache *)cache);
     int64_t cnt = status; /* arp cache entries counter */
 
-    if (status < 0) fprintf(stderr, FILELINE " error: parse_arp_cache %ld %d\n", status, errno);
+    if (status < 0) fprintf(stderr,  "error: parse_arp_cache %ld %d\n", status, errno);
 
     while (cnt--) {
         uint8_t ndm_family = cache[cnt].ndm_family;

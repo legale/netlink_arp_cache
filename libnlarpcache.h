@@ -10,10 +10,6 @@
 #include <linux/rtnetlink.h>
 #include <unistd.h> /* close() */
 
-/* FILELINE macro */
-#define STR(x) #x
-#define STRINGIFY(x) STR(x)
-#define FILELINE __FILE__ ":" STRINGIFY(__LINE__)
 
 /* structure to store arp entries */
 typedef struct _arp_cache {
