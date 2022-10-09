@@ -17,7 +17,7 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
 
     /* send message */
     status = send(sd, send_buf, send_buf_len, 0);
-#ifdef IS64BIT
+#if UINTPTR_MAX == UINT64_MAX
     if (status < 0) fprintf(stderr, "error: send %ld %d\n", status, errno);
 #else
     if (status < 0) fprintf(stderr, "error: send %lld %d\n", status, errno);
@@ -34,7 +34,7 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
      * Thus, a subsequent receive call will return the same data.
      */
     status = recv(sd, *buf, expected_buf_size, MSG_TRUNC | MSG_PEEK);
-#ifdef IS64BIT
+#if UINTPTR_MAX == UINT64_MAX
     if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
 #else
     if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);
@@ -45,7 +45,7 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
 
         status = recv(sd, *buf, expected_buf_size, 0); /* now we get the full message */
         buf_size = status; /* save real buffer bsize */
-#ifdef IS64BIT
+#if UINTPTR_MAX == UINT64_MAX
         if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
 #else
         if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);
@@ -53,7 +53,7 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
     }
 
     status = close(sd); /* close socket */
-#ifdef IS64BIT
+#if UINTPTR_MAX == UINT64_MAX
     if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
 #else
     if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);

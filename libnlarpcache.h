@@ -1,13 +1,6 @@
 #ifndef _LIB_NL_ARP_CACHE
 #define _LIB_NL_ARP_CACHE
 
-#ifndef IS64BIT
-#if SIZE_MAX == UINT64_MAX
-/* 64-bit */
-#define IS64BIT 1
-#endif
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
