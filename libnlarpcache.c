@@ -12,16 +12,12 @@ void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len
  * return recv data size received */
 ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
 
-    int64_t status; /* to store send() recv() return value  */
+    ssize_t status; /* to store send() recv() return value  */
     int sd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE); /* open socket */
 
     /* send message */
     status = send(sd, send_buf, send_buf_len, 0);
-#if UINTPTR_MAX == UINT64_MAX
-    if (status < 0) fprintf(stderr, "error: send %ld %d\n", status, errno);
-#else
-    if (status < 0) fprintf(stderr, "error: send %lld %d\n", status, errno);
-#endif
+    if (status < 0) fprintf(stderr, "error: send %zd %d\n", status, errno);
     /* get an answer */
     /*first we need to find out buffer size needed */
     ssize_t expected_buf_size = 512; /* initial buffer size */
@@ -34,30 +30,18 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
      * Thus, a subsequent receive call will return the same data.
      */
     status = recv(sd, *buf, expected_buf_size, MSG_TRUNC | MSG_PEEK);
-#if UINTPTR_MAX == UINT64_MAX
-    if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
-#else
-    if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);
-#endif
+    if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
     if (status > expected_buf_size) {
         expected_buf_size = status; /* this is real size */
         *buf = realloc(*buf, expected_buf_size); /* increase buffer size */
 
         status = recv(sd, *buf, expected_buf_size, 0); /* now we get the full message */
         buf_size = status; /* save real buffer bsize */
-#if UINTPTR_MAX == UINT64_MAX
-        if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
-#else
-        if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);
-#endif
+        if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
     }
 
     status = close(sd); /* close socket */
-#if UINTPTR_MAX == UINT64_MAX
-    if (status < 0) fprintf(stderr, "error: recv %ld %d\n", status, errno);
-#else
-    if (status < 0) fprintf(stderr, "error: recv %lld %d\n", status, errno);
-#endif
+    if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
     return buf_size;
 }
 

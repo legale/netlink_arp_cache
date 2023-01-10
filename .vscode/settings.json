@@ -1,0 +1,10 @@
+{
+    "cmake.configureOnOpen": true,
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/ruslan/netlink_arp_cache/build",
+            "binaryPath": "/home/ruslan/netlink_arp_cache/build/arp",
+            "binaryArgs": []
+        }
+    ]
+}
