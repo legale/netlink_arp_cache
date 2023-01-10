@@ -1,6 +1,10 @@
 #CMake
 /cmake-build*
 
+#vscode
+/.vscode/**
+.vscode
+
 #Eclipse
 /.settings/**
 .project
