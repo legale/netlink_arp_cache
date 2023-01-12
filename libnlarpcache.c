@@ -14,7 +14,10 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
 
     ssize_t status; /* to store send() recv() return value  */
     int sd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE); /* open socket */
-
+    if (sd < 0) {
+        perror("socket failed");
+        return -1;
+    }
     /* send message */
     status = send(sd, send_buf, send_buf_len, 0);
     if (status < 0) fprintf(stderr, "error: send %zd %d\n", status, errno);
