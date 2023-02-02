@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
             inet_ntop(ndm_family, ip_raw, ip, INET6_ADDRSTRLEN);
         }
 
-        char addr[18] = {0}; /*low level (hw) address string buffer */
+        char addr[sizeof("00:00:00:00:00:00 ")] = {0}; /*low level (hw) address string buffer */
         if (tb[NDA_LLADDR]) { /* this is hardware mac address */
             const uint8_t *addr_raw = RTA_DATA(tb[NDA_LLADDR]);
             sprintf(addr, "%02x:%02x:%02x:%02x:%02x:%02x",
