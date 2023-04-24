@@ -1,3 +1,5 @@
+#include <sys/time.h> /* timeval_t struct */
+
 #include "libnlarpcache.h"
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len) {
@@ -18,6 +20,16 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
         perror("socket failed");
         return -1;
     }
+
+    // set socket timeout 1 sec
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        perror("setsockopt");
+        return -2;
+    }
+
     /* send message */
     status = send(sd, send_buf, send_buf_len, 0);
     if (status < 0) fprintf(stderr, "error: send %zd %d\n", status, errno);
