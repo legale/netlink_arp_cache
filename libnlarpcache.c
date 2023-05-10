@@ -1,4 +1,5 @@
 #include <sys/time.h> /* timeval_t struct */
+#include <fcntl.h>
 
 #include "libnlarpcache.h"
 
@@ -21,10 +22,13 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
         return -1;
     }
 
-    // set socket timeout 1 sec
-    struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
+    fchmod(sd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+    // set socket nonblocking flag
+    // int flags = fcntl(sd, F_GETFL, 0);
+    // fcntl(sd, F_SETFL, flags | O_NONBLOCK);
+
+    // set socket timeout 100ms
+    struct timeval tv = {.tv_sec = 0, .tv_usec = 100000};
     if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
         perror("setsockopt");
         return -2;
