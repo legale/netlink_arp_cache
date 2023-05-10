@@ -1,5 +1,7 @@
 #include <sys/time.h> /* timeval_t struct */
 #include <fcntl.h>
+#include <sys/stat.h> /* fchmod */
+
 
 #include "libnlarpcache.h"
 
