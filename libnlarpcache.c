@@ -45,18 +45,28 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
     ssize_t buf_size = 0; /* real buffer size */
     *buf = malloc(expected_buf_size); /* alloc memory for a buffer */
 
+    //checking for incoming data 
+    fd_set readset;
+    FD_ZERO(&readset);
+    FD_SET(sd, &readset);
+    struct timeval timeout = {.tv_sec = 1, .tv_usec = 0}; // 1 sec. timeout
+    int select_result = select(sd + 1, &readset, NULL, NULL, &timeout);
+    if (select_result == -1) return select_result; // error
+    if (select_result == 0) return 0;              // no data
+
     /*
      * MSG_TRUNC will return data size even if buffer is smaller than data
      * MSG_PEEK will receive queue without removing that data from the queue.
      * Thus, a subsequent receive call will return the same data.
+     * MSG_DONTWAIT will set non-blocking mode
      */
-    status = recv(sd, *buf, expected_buf_size, MSG_TRUNC | MSG_PEEK);
+    status = recv(sd, *buf, expected_buf_size, MSG_PEEK | MSG_TRUNC | MSG_DONTWAIT);
     if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
     if (status > expected_buf_size) {
         expected_buf_size = status; /* this is real size */
         *buf = realloc(*buf, expected_buf_size); /* increase buffer size */
 
-        status = recv(sd, *buf, expected_buf_size, 0); /* now we get the full message */
+        status = recv(sd, *buf, expected_buf_size, MSG_DONTWAIT); /* now we get the full message */
         buf_size = status; /* save real buffer bsize */
         if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
     }
