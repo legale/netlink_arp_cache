@@ -1,43 +1,47 @@
-#name of output file
+# Name of output file
 NAME = arp
-#build dir
+# Build dir
 BD = ./build
 
-#Linker flags
+# Linker flags
 LDLIBS +=
 LDDIRS += -L$(BD)
 
-#Compiler flags
+# Compiler flags
 CFLAGS += -Wall -O2
-I += -I./
+I += -I/usr/include
 
-#Compiler
+# Compiler
 CC = gcc
 AR = ar
 
-#SRC=$(wildcard *.c)
+# SRC=$(wildcard *.c)
 LIBNAME = nlarpcache
-SRC_LIB = libnlarpcache.c
+SRC_LIB = libnlarpcache.c syslog.c
 SRC_BIN = main.c
-SRC = $(SRC_LIB) $(SRC_BIN)
+OBJ_LIB = $(patsubst %.c, $(BD)/%.o, $(SRC_LIB))
+OBJ_BIN = $(patsubst %.c, $(BD)/%.o, $(SRC_BIN))
 
-all: $(NAME) static shared
+all: $(NAME)
 
-$(NAME): $(SRC)
-		$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $^ -o build/$(NAME)
+$(NAME): $(BD)/lib$(LIBNAME).a $(BD)/$(NAME)_shared $(BD)/$(NAME)_static
+# Combine additional compilation steps here if needed
+# ...
 
-staticlib:
-		$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $(SRC_LIB) -c -o $(BD)/lib$(LIBNAME).a
-		#$(AR) rcs build/lib$(LIBNAME).a build/lib$(LIBNAME).o
+$(BD)/lib$(LIBNAME).a: $(OBJ_LIB)
+	$(AR) rcs $@ $^
 
-sharedlib:
-		$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $(SRC_LIB) -shared -fPIC -o $(BD)/lib$(LIBNAME).so
+$(BD)/$(NAME)_shared: $(OBJ_BIN) $(BD)/lib$(LIBNAME).so
+	$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $^ -o $@
 
-shared: sharedlib
-		$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $(SRC_BIN) -L./build -Wl,-Bdynamic -l$(LIBNAME) -o $(BD)/$(NAME)_shared
+$(BD)/$(NAME)_static: $(OBJ_BIN) $(BD)/lib$(LIBNAME).a
+	$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) -Wl,-Bstatic -l$(LIBNAME) -Wl,-Bdynamic $^ -o $@
 
-static: staticlib
-		$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDDIRS) $(SRC_BIN) -Wl,-Bstatic -l$(LIBNAME) -Wl,-Bdynamic -o $(BD)/$(NAME)_static
+$(BD)/%.o: %.c
+	$(CC) $(CFLAGS) $(I) -c $< -o $@
+
+$(BD)/lib$(LIBNAME).so: $(OBJ_LIB)
+	$(CC) $(CFLAGS) $(I) $(LDDIRS) $(LDLIBS) $^ -shared -fPIC -o $@
 
 clean:
-		rm -rf $(BD)/*
+	rm -rf $(BD)/*

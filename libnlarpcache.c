@@ -4,6 +4,7 @@
 
 
 #include "libnlarpcache.h"
+#include "syslog.h"
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, unsigned len) {
     /* loop over all rtattributes */
@@ -38,7 +39,9 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
 
     /* send message */
     status = send(sd, send_buf, send_buf_len, 0);
-    if (status < 0) fprintf(stderr, "error: send %zd %d\n", status, errno);
+    if (status < 0){
+      syslog2(LOG_ERR, "send %zd %d\n", status, errno);
+    }
     /* get an answer */
     /*first we need to find out buffer size needed */
     ssize_t expected_buf_size = 512; /* initial buffer size */
@@ -61,18 +64,24 @@ ssize_t send_recv(const void *send_buf, size_t send_buf_len, void **buf) {
      * MSG_DONTWAIT will set non-blocking mode
      */
     status = recv(sd, *buf, expected_buf_size, MSG_PEEK | MSG_TRUNC | MSG_DONTWAIT);
-    if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
+    if (status < 0){
+      syslog2(LOG_ERR, "recv %zd %d\n", status, errno);
+    }
     if (status > expected_buf_size) {
         expected_buf_size = status; /* this is real size */
         *buf = realloc(*buf, expected_buf_size); /* increase buffer size */
 
         status = recv(sd, *buf, expected_buf_size, MSG_DONTWAIT); /* now we get the full message */
         buf_size = status; /* save real buffer bsize */
-        if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
+        if (status < 0){
+          syslog2(LOG_ERR, "recv %zd %d\n", status, errno);
+        }
     }
 
     status = close(sd); /* close socket */
-    if (status < 0) fprintf(stderr, "error: recv %zd %d\n", status, errno);
+    if (status < 0){
+      syslog2(LOG_ERR, "recv %zd %d\n", status, errno);
+    }
     return buf_size;
 }
 
