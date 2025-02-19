@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     int64_t status = get_arp_cache(&buf); /* store arp cache data to a buffer */
 
     if (status < 0){
-        syslog2(LOG_ERR, "get_arp_cache %ld %d\n", status, errno);
+        syslog2(LOG_ERR, "get_arp_cache %ld %d", status, errno);
         return status;
     }
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     int64_t cnt = status; /* arp cache entries counter */
 
     if (status < 0){
-      syslog2(LOG_ERR,  "parse_arp_cache %ld %d\n", status, errno);
+      syslog2(LOG_ERR,  "parse_arp_cache %ld %d", status, errno);
     }
     while (cnt--) {
         uint8_t ndm_family = cache[cnt].ndm_family;
